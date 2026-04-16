@@ -29,9 +29,10 @@ function closeModal() {
 
 // ── Add-film modal ─────────────────────────────────────────────────────────
 const addBackdrop = document.getElementById("add-backdrop");
+const addBtn      = document.getElementById("add-btn");
 
-if (addBackdrop) {
-  document.getElementById("add-btn").addEventListener("click", openAddModal);
+if (addBtn) {
+  addBtn.addEventListener("click", openAddModal);
   document.getElementById("add-close").addEventListener("click", closeAddModal);
   addBackdrop.addEventListener("click", e => { if (e.target === addBackdrop) closeAddModal(); });
 
