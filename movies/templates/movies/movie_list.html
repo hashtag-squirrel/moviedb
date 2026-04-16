@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Movies</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'movies/movies.css' %}" />
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <h1 class="site-title">Alita's <em>Movies</em></h1>
+      <span class="count-badge" id="count"></span>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+      </svg>
+      <input type="text" id="search" placeholder="Search title or director…" />
+    </div>
+    <select id="genre"><option value="">All genres</option></select>
+    <select id="year"><option value="">All years</option></select>
+    <select id="sort">
+      <option value="">Sort by…</option>
+      <option value="id_asc">ID (asc)</option>
+      <option value="id_desc">ID (desc)</option>
+      <option value="title_asc">Title (A–Z)</option>
+      <option value="title_desc">Title (Z–A)</option>
+      <option value="genre_asc">Genre (A–Z)</option>
+      <option value="genre_desc">Genre (Z–A)</option>
+      <option value="rating_desc">Rating (high–low)</option>
+      <option value="rating_asc">Rating (low–high)</option>
+    </select>
+    <button class="clear-btn" id="clear-btn">Clear</button>
+  </div>
+
+  <div class="grid-wrap">
+    <div class="grid" id="grid">
+      <div class="state-msg"><div class="spinner"></div><br>Loading your movies…</div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div class="modal-titles">
+          <div class="modal-title" id="modal-title"></div>
+          <div class="modal-meta" id="modal-meta"></div>
+        </div>
+        <div class="modal-avg" id="modal-avg"></div>
+        <button class="modal-close" id="modal-close" aria-label="Close">&#x2715;</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="{% static 'movies/movies.js' %}"></script>
+</body>
+</html>
