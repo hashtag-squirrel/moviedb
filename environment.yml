@@ -61,3 +61,4 @@ dependencies:
       - urllib3==2.6.3
       - pymongo
       - django-mongodb-backend
+      - whitenoise>=6.0

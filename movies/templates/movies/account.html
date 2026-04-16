@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account — Movies</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'movies/movies.css' %}" />
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <h1 class="site-title"><a href="/" class="site-title-link">Alita's <em>Movies</em></a></h1>
+      <nav class="header-nav">
+        <a href="/account/" class="nav-link">{{ username }}</a>
+        <a href="/logout/" class="nav-link nav-link--muted">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="account-wrap">
+    <div class="account-card">
+      <div class="account-header">
+        <h2 class="account-title">Account</h2>
+        <p class="account-username">{{ username }}</p>
+      </div>
+
+      {% if success %}
+        <div class="auth-alert auth-alert--success">Preferences saved.</div>
+      {% endif %}
+
+      <p class="account-section-label">Preferences</p>
+
+      <form method="post" action="/account/">
+        {% csrf_token %}
+        <div class="auth-field">
+          <label class="auth-label" for="favorite_genres">Favourite genres</label>
+          <input
+            class="auth-input"
+            type="text"
+            id="favorite_genres"
+            name="favorite_genres"
+            value="{{ favorite_genres }}"
+            placeholder="e.g. Drama, Sci-Fi, Thriller"
+          />
+          <span class="auth-hint">Comma-separated list</span>
+        </div>
+        <button class="auth-btn" type="submit">Save changes</button>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>

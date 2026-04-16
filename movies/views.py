@@ -1,4 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth import (
+    authenticate,
+    logout as auth_logout,
+    SESSION_KEY,
+    BACKEND_SESSION_KEY,
+    HASH_SESSION_KEY,
+)
+from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
@@ -7,9 +15,85 @@ from rest_framework import status
 from . import services
 
 
+# ── Pages ──────────────────────────────────────────────────────────────────
+
 def movie_list_page(request):
     return render(request, "movies/movie_list.html")
 
+
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect("/")
+
+    error = None
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "")
+        user = authenticate(request, username=username, password=password)
+        if user:
+            request.session.cycle_key()
+            request.session[SESSION_KEY] = str(user.id)
+            request.session[BACKEND_SESSION_KEY] = user.backend
+            request.session[HASH_SESSION_KEY] = ""
+            request.user = user
+            return redirect(request.GET.get("next", "/"))
+        error = "Invalid username or password."
+
+    return render(request, "movies/login.html", {"error": error})
+
+
+def logout_view(request):
+    auth_logout(request)
+    return redirect("/")
+
+
+def signup_view(request):
+    if request.user.is_authenticated:
+        return redirect("/")
+
+    error = None
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "")
+        password2 = request.POST.get("password2", "")
+
+        if not username or not password:
+            error = "Username and password are required."
+        elif password != password2:
+            error = "Passwords do not match."
+        else:
+            try:
+                user_doc = services.create_user_with_password(username, password)
+                request.session.cycle_key()
+                request.session[SESSION_KEY] = str(user_doc["id"])
+                request.session[BACKEND_SESSION_KEY] = "movies.backends.MongoAuthBackend"
+                request.session[HASH_SESSION_KEY] = ""
+                return redirect("/")
+            except ValueError as e:
+                error = str(e)
+
+    return render(request, "movies/signup.html", {"error": error})
+
+
+@login_required(login_url="/login/")
+def account_view(request):
+    success = False
+    genres = list(request.user.favorite_genres)
+
+    if request.method == "POST":
+        genres_raw = request.POST.get("favorite_genres", "")
+        genres = [g.strip() for g in genres_raw.split(",") if g.strip()]
+        services.update_user_genres(request.user.id, genres)
+        success = True
+
+    return render(request, "movies/account.html", {
+        "username": request.user.username,
+        "favorite_genres": ", ".join(genres),
+        "success": success,
+    })
+
+
+# ── API ────────────────────────────────────────────────────────────────────
 
 class MovieListView(APIView):
     def get(self, request):
@@ -45,28 +129,23 @@ class MovieRatingsView(APIView):
             return Response({"error": str(e)}, status=404)
 
     def post(self, request, movie_id):
-        user_id = request.data.get("userId")
-        rating = request.data.get("rating")
+        if not request.user.is_authenticated:
+            return Response({"error": "Login required to submit a rating."}, status=401)
 
-        if user_id is None or rating is None:
-            return Response(
-                {"error": "userId and rating are required"},
-                status=400)
+        rating = request.data.get("rating")
+        if rating is None:
+            return Response({"error": "rating is required"}, status=400)
 
         try:
             rating = float(rating)
         except (TypeError, ValueError):
-            return Response(
-                {"error": "rating must be a number"},
-                status=400)
+            return Response({"error": "rating must be a number"}, status=400)
 
         if not (1 <= rating <= 10):
-            return Response(
-                {"error": "rating must be between 1 and 10"},
-                status=400)
+            return Response({"error": "rating must be between 1 and 10"}, status=400)
 
         try:
-            services.submit_rating(movie_id, str(user_id), rating)
+            services.submit_rating(movie_id, request.user.id, rating)
             return Response({"success": True})
         except Exception as e:
             return Response({"error": str(e)}, status=404)
