@@ -104,6 +104,8 @@ class MovieListView(APIView):
         return Response(movies)
 
     def post(self, request):
+        if not request.user.is_authenticated:
+            return Response({"error": "Login required."}, status=401)
         required = ["title", "genre", "year", "director"]
         missing = [f for f in required if not request.data.get(f)]
         if missing:
