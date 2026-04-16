@@ -1,6 +1,5 @@
 // ── State ──────────────────────────────────────────────────────────────────
 let allMovies      = [];
-let allUsers       = [];
 let debounceTimer  = null;
 let currentMovieId = null;
 let selectedScore  = null;
@@ -90,65 +89,47 @@ async function openModal(movie) {
            </div>`).join("")}`
       : `<div class="no-ratings-msg">No ratings yet for this film.</div>`;
 
-    const userOptions = allUsers.map(u =>
-      `<option value="${u.id}">${u.username}</option>`
-    ).join("");
-
-    modalBody.innerHTML = ratingsHtml + `
-      <div class="rating-form" id="rating-form">
-        <div class="rating-form-label">Leave a rating</div>
-        <div class="rating-form-row">
-          <select id="form-user">
-            <option value="">Who are you?</option>
-            ${userOptions}
-            <option value="__new__">+ New user</option>
-          </select>
-          <div class="star-picker" id="star-picker">
-            ${[1,2,3,4,5,6,7,8,9,10].map(n =>
-              `<button type="button" data-score="${n}" title="${n}/10">★</button>`
-            ).join("")}
+    const ratingSection = window.AUTH.isAuthenticated
+      ? `<div class="rating-form" id="rating-form">
+          <div class="rating-form-label">Rate as ${window.AUTH.username}</div>
+          <div class="rating-form-row">
+            <div class="star-picker" id="star-picker">
+              ${[1,2,3,4,5,6,7,8,9,10].map(n =>
+                `<button type="button" data-score="${n}" title="${n}/10">★</button>`
+              ).join("")}
+            </div>
+            <span class="score-display" id="score-display">—</span>
           </div>
-          <span class="score-display" id="score-display">—</span>
-        </div>
+          <div class="rating-form-row">
+            <button class="submit-btn" id="submit-rating" disabled>Submit rating</button>
+            <span class="form-feedback" id="form-feedback"></span>
+          </div>
+        </div>`
+      : `<div class="login-to-rate">
+          <a href="/login/" class="login-link">Log in to rate this film →</a>
+        </div>`;
 
-        <div id="new-user-fields" style="display:none; flex-direction:column; gap:10px;">
-          <input type="text" id="new-username" placeholder="Username" style="padding:9px 12px;" />
-          <input type="text" id="new-genres" placeholder="Favourite genres (comma-separated, e.g. Drama, Sci-Fi)" style="padding:9px 12px;" />
-        </div>
+    modalBody.innerHTML = ratingsHtml + ratingSection;
 
-        <div class="rating-form-row">
-          <button class="submit-btn" id="submit-rating" disabled>Submit rating</button>
-          <span class="form-feedback" id="form-feedback"></span>
-        </div>
-      </div>`;
-
-    setupRatingForm();
+    if (window.AUTH.isAuthenticated) {
+      setupRatingForm();
+    }
   } catch (err) {
     modalBody.innerHTML = `<div class="no-ratings-msg">Could not load ratings.</div>`;
   }
 }
 
 function setupRatingForm() {
-  const stars         = document.querySelectorAll("#star-picker button");
-  const scoreDisp     = document.getElementById("score-display");
-  const submitBtn     = document.getElementById("submit-rating");
-  const feedback      = document.getElementById("form-feedback");
-  const userSel       = document.getElementById("form-user");
-  const newUserFields = document.getElementById("new-user-fields");
-  const newUsername   = document.getElementById("new-username");
-  const newGenres     = document.getElementById("new-genres");
-
-  function isFormValid() {
-    if (!selectedScore) return false;
-    if (userSel.value === "__new__") return newUsername.value.trim().length > 0;
-    return userSel.value !== "";
-  }
+  const stars     = document.querySelectorAll("#star-picker button");
+  const scoreDisp = document.getElementById("score-display");
+  const submitBtn = document.getElementById("submit-rating");
+  const feedback  = document.getElementById("form-feedback");
 
   function updateStars(n) {
     stars.forEach(s => s.classList.toggle("active", +s.dataset.score <= n));
     scoreDisp.textContent = `${n}/10`;
     selectedScore = n;
-    submitBtn.disabled = !isFormValid();
+    submitBtn.disabled = false;
   }
 
   stars.forEach(btn => {
@@ -165,70 +146,23 @@ function setupRatingForm() {
     }
   });
 
-  userSel.addEventListener("change", () => {
-    const isNew = userSel.value === "__new__";
-    newUserFields.style.display = isNew ? "flex" : "none";
-    submitBtn.disabled = !isFormValid();
-  });
-
-  newUsername.addEventListener("input", () => {
-    submitBtn.disabled = !isFormValid();
-  });
-
   submitBtn.addEventListener("click", async () => {
-    if (!isFormValid()) return;
-
+    if (!selectedScore) return;
     submitBtn.disabled   = true;
     feedback.className   = "form-feedback";
     feedback.textContent = "";
 
     try {
-      let userId   = userSel.value;
-      let username = allUsers.find(u => u.id === userId)?.username;
-
-      // Create new user first if needed
-      if (userId === "__new__") {
-        const genres = newGenres.value.split(",").map(g => g.trim()).filter(Boolean);
-        const createRes = await fetch("/api/users/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-CSRFToken": getCsrf() },
-          body: JSON.stringify({ username: newUsername.value.trim(), favorite_genres: genres }),
-        });
-
-        if (!createRes.ok) {
-          const err = await createRes.json();
-          feedback.textContent = err.error || "Could not create user.";
-          feedback.className   = "form-feedback error";
-          submitBtn.disabled   = false;
-          return;
-        }
-
-        const newUser = await createRes.json();
-        userId   = newUser.id;
-        username = newUser.username;
-
-        // Add to local users list and dropdown
-        allUsers.push(newUser);
-        const opt = document.createElement("option");
-        opt.value = newUser.id;
-        opt.textContent = newUser.username;
-        userSel.insertBefore(opt, userSel.querySelector('option[value="__new__"]'));
-        userSel.value = newUser.id;
-        newUserFields.style.display = "none";
-      }
-
-      // Submit the rating
       const res = await fetch(`/api/movies/${currentMovieId}/ratings/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-CSRFToken": getCsrf() },
-        body: JSON.stringify({ userId, rating: selectedScore }),
+        body: JSON.stringify({ rating: selectedScore }),
       });
 
       if (res.ok) {
         feedback.textContent = "Rating submitted!";
         feedback.className   = "form-feedback success";
 
-        // fetchMovies refreshes allMovies with updated avg_rating from the server
         await fetchMovies();
         const updated = allMovies.find(m => m.id === currentMovieId);
         if (updated) {
@@ -272,13 +206,8 @@ async function fetchMovies() {
 
 async function fetchFiltersOptions() {
   try {
-    const [moviesRes, usersRes] = await Promise.all([
-      fetch("/api/movies/"),
-      fetch("/api/users/"),
-    ]);
-
-    allMovies = await moviesRes.json();
-    allUsers  = await usersRes.json();
+    const res = await fetch("/api/movies/");
+    allMovies = await res.json();
 
     const genres = [...new Set(allMovies.map(m => m.genre))].sort();
     const years  = [...new Set(allMovies.map(m => m.year))].sort((a, b) => b - a);

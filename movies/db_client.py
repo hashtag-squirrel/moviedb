@@ -11,8 +11,6 @@ def get_db():
         username = quote_plus(settings.MONGODB_USERNAME)
         password = quote_plus(settings.MONGODB_PASSWORD)
         uri = f"mongodb+srv://{username}:{password}@{settings.MONGODB_HOST}/"
-        print(f"Connecting to: mongodb+srv://{username}:***@{settings.MONGODB_HOST}/")
-        print(f"Password after encoding: {password}")
         _client = MongoClient(uri)
     return _client[settings.MONGODB_DATABASE]
 

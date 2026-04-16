@@ -1,6 +1,32 @@
 from .db_client import get_movies_collection, get_users_collection, get_ratings_collection  # noqa
 from .models import Movie, User
+from django.contrib.auth.hashers import make_password
 import uuid
+
+
+# ── Auth ───────────────────────────────────────────────────────────────────
+
+def create_user_with_password(username: str, password: str, favorite_genres: list = None) -> dict:
+    users = get_users_collection()
+    if users.find_one({"username": username}):
+        raise ValueError(f"Username '{username}' is already taken")
+    all_ids = [int(u["id"]) for u in users.find({}, {"_id": 0, "id": 1}) if str(u.get("id", "")).isdigit()]
+    next_id = str(max(all_ids, default=0) + 1)
+    doc = {
+        "id": next_id,
+        "username": username,
+        "password_hash": make_password(password),
+        "favorite_genres": favorite_genres or [],
+    }
+    users.insert_one(doc)
+    return doc
+
+
+def update_user_genres(user_id: str, genres: list) -> None:
+    get_users_collection().update_one(
+        {"id": user_id},
+        {"$set": {"favorite_genres": genres}},
+    )
 
 
 # ── Movies ─────────────────────────────────────────────────────────────────

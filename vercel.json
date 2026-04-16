@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "pip install -r requirements.txt && python manage.py collectstatic --no-input",
+  "buildCommand": "pip install -r requirements.txt && python manage.py migrate --run-syncdb && python manage.py collectstatic --no-input",
   "rewrites": [
     { "source": "/(.*)", "destination": "/api/index" }
   ]
