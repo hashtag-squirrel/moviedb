@@ -2,6 +2,8 @@
 
 A personal movie database with ratings and reviews. Built with Django and MongoDB, deployed on Vercel.
 
+Visit the site: [Movie DB](https://vercel.com/hashtag-squirrels-projects/moviedb/9HanGfbTPJFJQyWXjxp7ttRPyNpK)
+
 ## Features
 
 - Browse, search, and filter movies by title, director, genre, and year
