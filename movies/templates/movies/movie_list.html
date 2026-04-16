@@ -51,6 +51,9 @@
       <option value="rating_asc">Rating (low–high)</option>
     </select>
     <button class="clear-btn" id="clear-btn">Clear</button>
+    {% if request.user.is_authenticated %}
+      <button class="add-btn" id="add-btn">+ Add film</button>
+    {% endif %}
   </div>
 
   <div class="grid-wrap">
@@ -70,6 +73,45 @@
         <button class="modal-close" id="modal-close" aria-label="Close">&#x2715;</button>
       </div>
       <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="add-backdrop">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div class="modal-titles">
+          <div class="modal-title">Add a film</div>
+        </div>
+        <button class="modal-close" id="add-close" aria-label="Close">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="add-form">
+          <div class="add-form-row">
+            <div class="add-field">
+              <label class="add-label" for="add-title">Title</label>
+              <input class="add-input" type="text" id="add-title" placeholder="e.g. Dune" />
+            </div>
+            <div class="add-field">
+              <label class="add-label" for="add-director">Director</label>
+              <input class="add-input" type="text" id="add-director" placeholder="e.g. Denis Villeneuve" />
+            </div>
+          </div>
+          <div class="add-form-row">
+            <div class="add-field">
+              <label class="add-label" for="add-genre">Genre</label>
+              <input class="add-input" type="text" id="add-genre" placeholder="e.g. Sci-Fi" />
+            </div>
+            <div class="add-field add-field--sm">
+              <label class="add-label" for="add-year">Year</label>
+              <input class="add-input" type="number" id="add-year" placeholder="e.g. 2021" min="1888" max="2099" />
+            </div>
+          </div>
+          <div class="rating-form-row">
+            <button class="submit-btn" id="add-submit">Add film</button>
+            <span class="form-feedback" id="add-feedback"></span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

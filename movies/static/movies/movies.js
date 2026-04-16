@@ -18,13 +18,81 @@ const modalMeta  = document.getElementById("modal-meta");
 const modalAvg   = document.getElementById("modal-avg");
 const modalBody  = document.getElementById("modal-body");
 
-// ── Modal open/close ───────────────────────────────────────────────────────
+// ── Rating modal open/close ────────────────────────────────────────────────
 document.getElementById("modal-close").addEventListener("click", closeModal);
 backdrop.addEventListener("click", e => { if (e.target === backdrop) closeModal(); });
-document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") { closeModal(); closeAddModal(); } });
 
 function closeModal() {
   backdrop.classList.remove("open");
+}
+
+// ── Add-film modal ─────────────────────────────────────────────────────────
+const addBackdrop = document.getElementById("add-backdrop");
+
+if (addBackdrop) {
+  document.getElementById("add-btn").addEventListener("click", openAddModal);
+  document.getElementById("add-close").addEventListener("click", closeAddModal);
+  addBackdrop.addEventListener("click", e => { if (e.target === addBackdrop) closeAddModal(); });
+
+  document.getElementById("add-submit").addEventListener("click", async () => {
+    const title    = document.getElementById("add-title").value.trim();
+    const director = document.getElementById("add-director").value.trim();
+    const genre    = document.getElementById("add-genre").value.trim();
+    const year     = document.getElementById("add-year").value.trim();
+    const feedback = document.getElementById("add-feedback");
+    const submitBtn = document.getElementById("add-submit");
+
+    if (!title || !director || !genre || !year) {
+      feedback.textContent = "All fields are required.";
+      feedback.className   = "form-feedback error";
+      return;
+    }
+
+    submitBtn.disabled   = true;
+    feedback.className   = "form-feedback";
+    feedback.textContent = "";
+
+    try {
+      const res = await fetch("/api/movies/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": getCsrf() },
+        body: JSON.stringify({ title, director, genre, year: parseInt(year) }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        feedback.textContent = `"${data.title}" added!`;
+        feedback.className   = "form-feedback success";
+        document.getElementById("add-title").value    = "";
+        document.getElementById("add-director").value = "";
+        document.getElementById("add-genre").value    = "";
+        document.getElementById("add-year").value     = "";
+        await fetchFiltersOptions();
+        setTimeout(closeAddModal, 1200);
+      } else {
+        feedback.textContent = data.error || "Something went wrong.";
+        feedback.className   = "form-feedback error";
+        submitBtn.disabled   = false;
+      }
+    } catch (e) {
+      feedback.textContent = "Could not submit. Try again.";
+      feedback.className   = "form-feedback error";
+      submitBtn.disabled   = false;
+    }
+  });
+}
+
+function openAddModal() {
+  document.getElementById("add-feedback").className   = "form-feedback";
+  document.getElementById("add-feedback").textContent = "";
+  document.getElementById("add-submit").disabled = false;
+  addBackdrop.classList.add("open");
+}
+
+function closeAddModal() {
+  if (addBackdrop) addBackdrop.classList.remove("open");
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
